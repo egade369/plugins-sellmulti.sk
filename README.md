@@ -1,0 +1,1 @@
+# Skript-scripts-sellmulti.sk

@@ -1,0 +1,704 @@
+# ==========================================================
+# ✦ ADVANCED MULTI-CATEGORY SELL & MULTIPLIER SYSTEM ✦
+# ==========================================================
+
+options:
+    prefix: &8[&e&lMarket&8] &7
+
+# ---------------------------------------------------------
+# Set up items and categories upon script load (does not delete or overwrite existing prices)
+# ---------------------------------------------------------
+on load:
+    delete {shop::all_items::*}
+    delete {shop::item_category::*}
+    
+    # --- System to check and reset timer to 45 days automatically (runs once) ---
+    if {shop::market::timer_version} is not "45days_v1":
+        set {shop::market::timer_version} to "45days_v1"
+        set {shop::market::next_update} to now
+        add 45 days to {shop::market::next_update}
+    
+    # --- System to fetch all item types in-game and categorize accurately ---
+    loop all item types:
+        if loop-value is not air:
+            set {_str} to "%loop-value%"
+            replace all "minecraft:" with "" in {_str}
+            replace all " " with "_" in {_str}
+            if {_str} contains "[":
+                set {_s::*} to {_str} split at "["
+                set {_str} to {_s::1}
+            
+            # 1. Filtering system: Skip admin items and unobtainable items
+            if {_str} contains "spawn egg" or "command block" or "barrier" or "bedrock" or "spawner" or "structure" or "jigsaw" or "debug" or "reinforced deepslate":
+                continue
+            
+            # Set starting base price to 1 only for items that don't already have a price in the system
+            if {shop::baseprice::%{_str}%} is not set:
+                set {shop::baseprice::%{_str}%} to 1
+                
+            # 2. Categorization sorting
+            if {shop::item_category::%{_str}%} is not set:
+                set {shop::item_category::%{_str}%} to "nature"
+                
+                if {_str} contains "sword" or "pickaxe" or "axe" or "shovel" or "hoe" or "helmet" or "chestplate" or "leggings" or "boots" or "shield" or "bow" or "crossbow" or "trident" or "arrow" or "shears" or "spear" or "horse armor":
+                    set {shop::item_category::%{_str}%} to "armor"
+                else if {_str} contains "beacon" or "nether star" or "elytra" or "dragon egg" or "conduit" or "totem of undying":
+                    set {shop::item_category::%{_str}%} to "rare"
+                else if {_str} contains "enchanted book" or "book" or "experience bottle":
+                    set {shop::item_category::%{_str}%} to "enchant"
+                else if {_str} contains "potion" or "glass bottle" or "brewing stand" or "nether wart" or "blaze powder" or "fermented spider eye" or "dragon's breath":
+                    set {shop::item_category::%{_str}%} to "brewing"
+                else if {_str} contains "rabbit's foot" or "magma cream" or "ghast tear":
+                    set {shop::item_category::%{_str}%} to "brewing"
+                else if {_str} contains "torch" or "lamp" or "pink petals" or "shulker" or "pottery" or "brick":
+                    set {shop::item_category::%{_str}%} to "nature"
+                else if {_str} contains "carrot" or "wheat" or "potato" or "beetroot" or "melon" or "pumpkin":
+                    set {shop::item_category::%{_str}%} to "farming"
+                else if {_str} contains "apple" or "bread" or "mushroom" or "beef" or "porkchop" or "chicken":
+                    set {shop::item_category::%{_str}%} to "farming"
+                else if {_str} contains "mutton" or "rabbit" or "cookie" or "pie" or "stew" or "berry" or "chorus":
+                    set {shop::item_category::%{_str}%} to "farming"
+                else if {_str} contains "honey" or "kelp" or "sugar cane" or "cactus" or "seed" or "pickle" or "seagrass" or "cocoa" or "spore blossom":
+                    set {shop::item_category::%{_str}%} to "farming"
+                else if {_str} contains "ore" or "raw_" or "ingot" or "nugget" or "diamond" or "emerald":
+                    set {shop::item_category::%{_str}%} to "mining"
+                else if {_str} contains "coal" or "charcoal" or "redstone" or "quartz" or "amethyst" or "netherite" or "ancient_debris" or "lapis":
+                    set {shop::item_category::%{_str}%} to "mining"
+                else if {_str} contains "bone" or "rotten_flesh" or "string" or "spider_eye" or "gunpowder" or "slime_ball":
+                    set {shop::item_category::%{_str}%} to "mobdrops"
+                else if {_str} contains "ender_pearl" or "shulker_shell" or "feather" or "phantom_membrane" or "blaze_rod":
+                    set {shop::item_category::%{_str}%} to "mobdrops"
+                else if {_str} contains "ink_sac" or "glow_ink_sac" or "leather" or "nautilus_shell" or "heart_of_the_sea" or "scale":
+                    set {shop::item_category::%{_str}%} to "mobdrops"
+                else if {_str} contains "cod" or "salmon" or "tropical_fish" or "pufferfish" or "fishing_rod":
+                    set {shop::item_category::%{_str}%} to "fishing"
+                    
+            if {shop::all_items::*} does not contain loop-value:
+                add loop-value to {shop::all_items::*}
+
+    if {shop::market::next_update} is not set:
+        set {shop::market::next_update} to now
+        add 45 days to {shop::market::next_update}
+        
+    loop {shop::baseprice::*}:
+        if {shop::market::price::%loop-index%} is not set:
+            set {shop::market::price::%loop-index%} to {shop::baseprice::%loop-index%}
+
+    broadcast "&8[&e&lMarket&8] &7 &aSuccessfully loaded market system! Exponential difficulty scaling configured."
+
+# ---------------------------------------------------------
+# Chat input system for new prices (when clicking items in /sellmultibefore)
+# ---------------------------------------------------------
+on chat:
+    if {shop::admin_edit::%player's uuid%::item} is set:
+        cancel event
+        set {_targetItem} to {shop::admin_edit::%player's uuid%::item}
+        delete {shop::admin_edit::%player's uuid%::item}
+        
+        if message is "cancel":
+            send "{@prefix} &cPrice editing cancelled."
+            stop
+            
+        set {_num} to message parsed as number
+        if {_num} is not set:
+            send "{@prefix} &cPlease enter a valid numeric price!"
+            stop
+            
+        # Updates Base Price only; market price will not change immediately
+        set {shop::baseprice::%{_targetItem}%} to {_num}
+        send "{@prefix} &aSet base price of &e%{_targetItem}% &ato &e%formatComma({_num})% ⛃ &asuccessfully! (This price will take effect in the market when using /setpriceupdate)"
+        play sound "entity.player.levelup" with volume 0.5 to player
+
+# ---------------------------------------------------------
+# Admin command for emergency price updates and timer reset (/setpriceupdate)
+# ---------------------------------------------------------
+command /setpriceupdate:
+    permission: op
+    trigger:
+        loop {shop::baseprice::*}:
+            set {shop::market::price::%loop-index%} to {shop::baseprice::%loop-index%}
+        set {shop::market::next_update} to now
+        add 45 days to {shop::market::next_update}
+        broadcast "{@prefix} &aEmergency market prices updated to Base Price and countdown reset to 45 days successfully!"
+
+# ---------------------------------------------------------
+# Admin command to reset market timer and randomize new prices (/resetmarket)
+# ---------------------------------------------------------
+command /resetmarket:
+    permission: op
+    trigger:
+        set {shop::market::next_update} to now
+        add 45 days to {shop::market::next_update}
+        loop {shop::baseprice::*}:
+            set {_rand} to random number between 0.8 and 1.2
+            set {shop::market::price::%loop-index%} to {shop::baseprice::%loop-index%} * {_rand}
+        send "&8[&e&lMarket&8] &7 &aMarket timer reset and new prices randomized for 45 days successfully!"
+
+# ---------------------------------------------------------
+# Market price fluctuation update system (every 45 days)
+# ---------------------------------------------------------
+every 1 minute:
+    if now is greater than or equal to {shop::market::next_update}:
+        set {shop::market::next_update} to now
+        add 45 days to {shop::market::next_update}
+        loop {shop::baseprice::*}:
+            set {_rand} to random number between 0.8 and 1.2
+            set {shop::market::price::%loop-index%} to {shop::baseprice::%loop-index%} * {_rand}
+        broadcast "&8[&e&lMarket&8] &7 &a45-day mark reached! Market prices have fluctuated and updated successfully."
+
+# ---------------------------------------------------------
+# Basic functions & comma formatting system (,)
+# ---------------------------------------------------------
+function formatComma(n: number) :: text:
+    set {_s} to "%round({_n})%"
+    set {_len} to length of {_s}
+    if {_len} > 3:
+        set {_res} to ""
+        set {_c} to 0
+        loop {_len} times:
+            set {_char} to character at ({_len} - loop-value + 1) of {_s}
+            add 1 to {_c}
+            if {_c} is 4:
+                set {_res} to ",%{_res}%"
+                set {_c} to 1
+            set {_res} to "%{_char}%%{_res}%"
+        return {_res}
+    return {_s}
+
+function formatMarketNum(n: number) :: text:
+    if {_n} >= 1000000000:
+        set {_v} to {_n} / 1000000000
+        return "%round({_v} * 100) / 100%B"
+    else if {_n} >= 1000000:
+        set {_v} to {_n} / 1000000
+        return "%round({_v} * 100) / 100%M"
+    else if {_n} >= 1000:
+        set {_v} to {_n} / 1000
+        return "%round({_v} * 100) / 100%K"
+    return formatComma({_n})
+
+function getProgressBar(curr: number, max: number) :: text:
+    set {_percent} to {_curr} / {_max}
+    if {_percent} > 1:
+        set {_percent} to 1
+    set {_bars} to 20
+    set {_filled} to round({_percent} * {_bars})
+    set {_unfilled} to {_bars} - {_filled}
+    set {_res} to "&a"
+    loop {_filled} times:
+        set {_res} to "%{_res}%▬"
+    set {_res} to "%{_res}%&7"
+    loop {_unfilled} times:
+        set {_res} to "%{_res}%▬"
+    return "%{_res}%"
+
+# 🌟 Exponential Multiplier Level System (Easy early on, drastically harder later) 🌟
+function getCategoryData(val: number) :: text:
+    if {_val} < 5000000:          # 5 Million (1.0 -> 1.1)
+        return "1.0|5000000"
+    else if {_val} < 12000000:    # 12 Million (1.1 -> 1.2)
+        return "1.1|12000000"
+    else if {_val} < 28000000:    # 28 Million (1.2 -> 1.3)
+        return "1.2|28000000"
+    else if {_val} < 60000000:    # 60 Million (1.3 -> 1.4)
+        return "1.3|60000000"
+    else if {_val} < 130000000:   # 130 Million (1.4 -> 1.5)
+        return "1.4|130000000"
+    else if {_val} < 280000000:   # 280 Million (1.5 -> 1.6)
+        return "1.5|280000000"
+    else if {_val} < 600000000:   # 600 Million (1.6 -> 1.7)
+        return "1.6|600000000"
+    else if {_val} < 1300000000:  # 1.3 Billion (1.7 -> 1.8)
+        return "1.7|1300000000"
+    else if {_val} < 2800000000:  # 2.8 Billion (1.8 -> 1.9)
+        return "1.8|2800000000"
+    else if {_val} < 6000000000:  # 6 Billion (1.9 -> 2.0)
+        return "1.9|6000000000"
+    else if {_val} < 13000000000: # 13 Billion (2.0 -> 2.1)
+        return "2.0|13000000000"
+    else if {_val} < 28000000000: # 28 Billion (2.1 -> 2.2)
+        return "2.1|28000000000"
+    else if {_val} < 60000000000: # 60 Billion (2.2 -> 2.3)
+        return "2.2|60000000000"
+    else if {_val} < 130000000000:# 130 Billion (2.3 -> 2.4)
+        return "2.3|130000000000"
+    else if {_val} < 280000000000:# 280 Billion (2.4 -> 2.5)
+        return "2.4|280000000000"
+    else if {_val} < 600000000000:# 600 Billion (2.5 -> 2.6)
+        return "2.5|600000000000"
+    else if {_val} < 1300000000000:# 1.3 Trillion (2.6 -> 2.7)
+        return "2.6|1300000000000"
+    else if {_val} < 2800000000000:# 2.8 Trillion (2.7 -> 2.8)
+        return "2.7|2800000000000"
+    else if {_val} < 6000000000000:# 6 Trillion (2.8 -> 2.9)
+        return "2.8|6000000000000"
+    else if {_val} < 15000000000000:# 15 Trillion (2.9 -> 3.0)
+        return "2.9|15000000000000"
+    else:
+        return "3.0|MAX"
+
+# ---------------------------------------------------------
+# 1. Command /sell (Item sell chest container, deposit items and click to sell)
+# ---------------------------------------------------------
+command /sell:
+    trigger:
+        set {_gui} to chest inventory with 5 rows named "&8✦ &lItem Selling System"
+        set {_glass} to black stained glass pane named "&7"
+        
+        loop 9 times:
+            set slot (loop-number - 1) + 36 of {_gui} to {_glass}
+            
+        set slot 42 of {_gui} to emerald block named "&a&l✔ Confirm Sale" with lore "&7Click to sell all items inside the chest"
+        set slot 44 of {_gui} to barrier named "&c&l✘ Cancel" with lore "&7Close window and return items"
+        
+        open {_gui} to player
+
+# ---------------------------------------------------------
+# 2. Command /sellmulti (Market prices and current multiplier overview page)
+# ---------------------------------------------------------
+command /sellmulti:
+    trigger:
+        set {_gui} to chest inventory with 1 rows named "&8✦ &lMARKET PRICES"
+        
+        set {_diff} to difference between now and {shop::market::next_update}
+        set {_secs} to {_diff} / 1 second
+        set {_days} to floor({_secs} / 86400)
+        set {_rem} to {_secs} - ({_days} * 86400)
+        set {_hours} to floor({_rem} / 3600)
+        set {_timeStr} to "%{_days}%d %{_hours}%h"
+
+        set {_categories::1} to "farming|carrot|&a&lFARMING|Crops and Agriculture"
+        set {_categories::2} to "mining|diamond|&b&lMINING|Ores and Gems"
+        set {_categories::3} to "mobdrops|bone|&e&lMOB DROPS|Monster Parts"
+        set {_categories::4} to "armor|golden chestplate|&6&lGEAR|Equipment and Armor"
+        set {_categories::5} to "nature|oak leaves|&2&lNATURE|Wood and Nature"
+        set {_categories::6} to "fishing|tropical fish|&3&lFISHING|Fish and Fishing Items"
+        set {_categories::7} to "enchant|enchanted book|&5&lMAGIC|Books and Magic"
+        set {_categories::8} to "brewing|brewing stand|&d&lBREWING|Potions and Brewing Stands"
+        set {_categories::9} to "rare|beacon|&b&lRARE ITEMS|Rare Items"
+
+        loop 9 times:
+            set {_data::*} to {_categories::%loop-number%} split at "|"
+            set {_catID} to {_data::1}
+            set {_itemType} to {_data::2} parsed as item type
+            set {_name} to {_data::3}
+            set {_desc} to {_data::4}
+            
+            set {_earned} to {shop::progress::%player's uuid%::%{_catID}%}
+            if {_earned} is not set:
+                set {_earned} to 0
+                
+            set {_catData::*} to getCategoryData({_earned}) split at "|"
+            set {_mult} to {_catData::1} parsed as number
+            
+            delete {_lore::*}
+            add "&fClick to view item prices in this category" to {_lore::*}
+            add "" to {_lore::*}
+            add "&6Multiplier Progress: &a&l%{_mult}%x" to {_lore::*}
+            
+            if {_catData::2} is "MAX":
+                add "%getProgressBar(1, 1)% &e&lMAX LEVEL" to {_lore::*}
+            else:
+                set {_target} to {_catData::2} parsed as number
+                set {_pct} to round(({_earned} / {_target}) * 100 * 100) / 100
+                add "%getProgressBar({_earned}, {_target})% &e%formatMarketNum({_earned})%&6/&e%formatMarketNum({_target})% &7(%{_pct}%%%)" to {_lore::*}
+                
+            add "" to {_lore::*}
+            add "&c⏰ Next price randomization in: &f%{_timeStr}%" to {_lore::*}
+            add "" to {_lore::*}
+            add "&e► Left-click to view item list" to {_lore::*}
+            
+            set {_display} to 1 of {_itemType} named {_name} with lore {_lore::*}
+            set slot (loop-number - 1) of {_gui} to {_display}
+
+        open {_gui} to player
+
+# ---------------------------------------------------------
+# 3. Command /sellmultibefore (Base Price view and editing page)
+# ---------------------------------------------------------
+command /sellmultibefore [<text>] [<integer=1>]:
+    trigger:
+        if arg-1 is not set:
+            set {_gui} to chest inventory with 1 rows named "&8✦ &lBASE MARKET PRICES"
+            
+            set {_categories::1} to "farming|carrot|&a&lFARMING|Crop Base Prices"
+            set {_categories::2} to "mining|diamond|&b&lMINING|Ore Base Prices"
+            set {_categories::3} to "mobdrops|bone|&e&lMOB DROPS|Mob Drop Base Prices"
+            set {_categories::4} to "armor|golden chestplate|&6&lGEAR|Armor Base Prices"
+            set {_categories::5} to "nature|oak leaves|&2&lNATURE|Nature Base Prices"
+            set {_categories::6} to "fishing|tropical fish|&3&lFISHING|Fishing Base Prices"
+            set {_categories::7} to "enchant|enchanted book|&5&lMAGIC|Book Base Prices"
+            set {_categories::8} to "brewing|brewing stand|&d&lBREWING|Potion Base Prices"
+            set {_categories::9} to "rare|beacon|&b&lRARE ITEMS|Rare Item Base Prices"
+
+            loop 9 times:
+                set {_data::*} to {_categories::%loop-number%} split at "|"
+                set {_catID} to {_data::1}
+                set {_itemType} to {_data::2} parsed as item type
+                set {_name} to {_data::3}
+                set {_desc} to {_data::4}
+                
+                delete {_lore::*}
+                add "&fClick to view Base Prices" to {_lore::*}
+                add "" to {_lore::*}
+                add "&e► Left-click to view item list" to {_lore::*}
+                
+                set {_display} to 1 of {_itemType} named {_name} with lore {_lore::*}
+                set slot (loop-number - 1) of {_gui} to {_display}
+
+            open {_gui} to player
+            stop
+            
+        set {_cat} to arg-1
+        set {_page} to arg-2
+        
+        set {_gui} to chest inventory with 6 rows named "&8✦ &lBASE PRICE LIST &8(%{_cat}%) Page %{_page}%"
+        
+        set {_start} to ({_page} - 1) * 45
+        set {_end} to {_page} * 45
+        
+        delete {_tempSort::*}
+        delete {_sortedItems::*}
+        
+        loop {shop::all_items::*}:
+            set {_itemStr} to "%loop-value%"
+            if {shop::item_category::%{_itemStr}%} is {_cat}:
+                set {_basePrice} to {shop::baseprice::%{_itemStr}%}
+                if {_basePrice} is not set:
+                    set {_basePrice} to 1
+                
+                set {_sortPrice} to round({_basePrice} * 100)
+                set {_sortStr} to "%{_sortPrice}%"
+                set {_pad} to ""
+                set {_len} to length of {_sortStr}
+                if {_len} < 15:
+                    loop 15 - {_len} times:
+                        set {_pad} to "0%{_pad}%"
+                
+                set {_sortKey} to "%{_pad}%%{_sortStr}%-%{_itemStr}%"
+                set {_tempSort::%{_sortKey}%} to loop-value
+                
+        loop reversed sorted indices of {_tempSort::*}:
+            add {_tempSort::%loop-value%} to {_sortedItems::*}
+        
+        set {_count} to 0
+        set {_slot} to 0
+        
+        loop {_sortedItems::*}:
+            add 1 to {_count}
+            if {_count} > {_start}:
+                if {_count} <= {_end}:
+                    set {_itemStr} to "%loop-value%"
+                    set {_basePrice} to {shop::baseprice::%{_itemStr}%}
+                    if {_basePrice} is not set:
+                        set {_basePrice} to 1
+                        
+                    set {_display} to 1 of loop-value
+                    delete {_lore::*}
+                    add "&a&lBase Price: &e&l%formatComma({_basePrice})% ⛃&7/each" to {_lore::*}
+                    add "" to {_lore::*}
+                    add "&e► Left-click to edit price" to {_lore::*}
+                    
+                    set lore of {_display} to {_lore::*}
+                    set slot {_slot} of {_gui} to {_display}
+                    add 1 to {_slot}
+                        
+        set {_glass} to black stained glass pane named "&7"
+        loop 9 times:
+            set slot (loop-number - 1) + 45 of {_gui} to {_glass}
+            
+        if {_page} > 1:
+            set slot 45 of {_gui} to arrow named "&b&l⬅ Previous Page &8(Page %{_page} - 1%)"
+        
+        set slot 49 of {_gui} to barrier named "&c&l⬅ Return to Category Page"
+        
+        if {_count} > {_end}:
+            set slot 53 of {_gui} to arrow named "&b&lNext Page ➡ &8(Page %{_page} + 1%)"
+            
+        set metadata tag "view_base_cat" of player to {_cat}
+        set metadata tag "view_base_page" of player to "%{_page}%"
+        open {_gui} to player
+
+# ---------------------------------------------------------
+# 4. Hidden command for viewing normal item lists
+# ---------------------------------------------------------
+command /viewprices [<text>] [<integer=1>]:
+    trigger:
+        if arg-1 is not set:
+            execute player command "/sellmulti"
+            stop
+            
+        set {_cat} to arg-1
+        set {_page} to arg-2
+        
+        set {_gui} to chest inventory with 6 rows named "&8✦ &lPRICE LIST &8(%{_cat}%) Page %{_page}%"
+        
+        set {_earned} to {shop::progress::%player's uuid%::%{_cat}%}
+        if {_earned} is not set:
+            set {_earned} to 0
+        set {_catData::*} to getCategoryData({_earned}) split at "|"
+        set {_mult} to {_catData::1} parsed as number
+        
+        set {_start} to ({_page} - 1) * 45
+        set {_end} to {_page} * 45
+        
+        delete {_tempSort::*}
+        delete {_sortedItems::*}
+        
+        loop {shop::all_items::*}:
+            set {_itemStr} to "%loop-value%"
+            if {shop::item_category::%{_itemStr}%} is {_cat}:
+                set {_price} to {shop::market::price::%{_itemStr}%}
+                if {_price} is not set:
+                    set {_price} to {shop::baseprice::%{_itemStr}%}
+                if {_price} is not set:
+                    set {_price} to 1
+                
+                set {_sortPrice} to round({_price} * 100)
+                set {_sortStr} to "%{_sortPrice}%"
+                set {_pad} to ""
+                set {_len} to length of {_sortStr}
+                if {_len} < 15:
+                    loop 15 - {_len} times:
+                        set {_pad} to "0%{_pad}%"
+                
+                set {_sortKey} to "%{_pad}%%{_sortStr}%-%{_itemStr}%"
+                set {_tempSort::%{_sortKey}%} to loop-value
+                
+        loop reversed sorted indices of {_tempSort::*}:
+            add {_tempSort::%loop-value%} to {_sortedItems::*}
+        
+        set {_count} to 0
+        set {_slot} to 0
+        
+        loop {_sortedItems::*}:
+            add 1 to {_count}
+            if {_count} > {_start}:
+                if {_count} <= {_end}:
+                    set {_itemStr} to "%loop-value%"
+                    set {_base} to {shop::baseprice::%{_itemStr}%}
+                    set {_marketPrice} to {shop::market::price::%{_itemStr}%}
+                    if {_marketPrice} is not set:
+                        set {_marketPrice} to {_base}
+                    if {_marketPrice} is not set:
+                        set {_marketPrice} to 1
+                        
+                    set {_finalPrice} to {_marketPrice} * {_mult}
+                    
+                    set {_display} to 1 of loop-value
+                    delete {_lore::*}
+                    add "&7Current Market Price: &e%formatComma({_marketPrice})% ⛃" to {_lore::*}
+                    add "&7Your Multiplier Bonus: &a&lx%{_mult}%" to {_lore::*}
+                    add "&8&m----------------------------" to {_lore::*}
+                    add "&a&lNet Sell Price: &e&l%formatComma({_finalPrice})% ⛃&7/each" to {_lore::*}
+                    
+                    set lore of {_display} to {_lore::*}
+                    set slot {_slot} of {_gui} to {_display}
+                    add 1 to {_slot}
+                        
+        set {_glass} to black stained glass pane named "&7"
+        loop 9 times:
+            set slot (loop-number - 1) + 45 of {_gui} to {_glass}
+            
+        if {_page} > 1:
+            set slot 45 of {_gui} to arrow named "&b&l⬅ Previous Page &8(Page %{_page} - 1%)"
+        
+        set slot 49 of {_gui} to barrier named "&c&l⬅ Return to Category Page"
+        
+        if {_count} > {_end}:
+            set slot 53 of {_gui} to arrow named "&b&lNext Page ➡ &8(Page %{_page} + 1%)"
+            
+        set metadata tag "view_cat" of player to {_cat}
+        set metadata tag "view_page" of player to "%{_page}%"
+        open {_gui} to player
+
+# ---------------------------------------------------------
+# 5. Admin command /setprice (Edit base price of held item)
+# ---------------------------------------------------------
+command /setprice <number>:
+    permission: op
+    trigger:
+        set {_item} to player's held item
+        if {_item} is air:
+            send "&8[&e&lMarket&8] &7 &cPlease hold the item you want to set the price for in your hand!"
+            stop
+            
+        set {_str} to "%type of {_item}%"
+        replace all "minecraft:" with "" in {_str}
+        
+        set {shop::baseprice::%{_str}%} to arg-1
+        
+        send "&8[&e&lMarket&8] &7 &aSet Base Price of &e%{_str}% &ato &e%formatComma(arg-1)% ⛃ &asuccessfully! (Check it using /sellmultibefore)"
+
+# ---------------------------------------------------------
+# 6. GUI Click Management and Purchasing System
+# ---------------------------------------------------------
+on inventory click:
+    set {_invName} to uncolored name of event-inventory
+    
+    if {_invName} contains "BASE MARKET PRICES":
+        cancel event
+        if clicked inventory is player's inventory:
+            stop
+            
+        if clicked slot is 0:
+            execute player command "/sellmultibefore farming 1"
+        else if clicked slot is 1:
+            execute player command "/sellmultibefore mining 1"
+        else if clicked slot is 2:
+            execute player command "/sellmultibefore mobdrops 1"
+        else if clicked slot is 3:
+            execute player command "/sellmultibefore armor 1"
+        else if clicked slot is 4:
+            execute player command "/sellmultibefore nature 1"
+        else if clicked slot is 5:
+            execute player command "/sellmultibefore fishing 1"
+        else if clicked slot is 6:
+            execute player command "/sellmultibefore enchant 1"
+        else if clicked slot is 7:
+            execute player command "/sellmultibefore brewing 1"
+        else if clicked slot is 8:
+            execute player command "/sellmultibefore rare 1"
+
+    else if {_invName} contains "MARKET PRICES":
+        cancel event
+        if clicked inventory is player's inventory:
+            stop
+            
+        if clicked slot is 0:
+            execute player command "/viewprices farming 1"
+        else if clicked slot is 1:
+            execute player command "/viewprices mining 1"
+        else if clicked slot is 2:
+            execute player command "/viewprices mobdrops 1"
+        else if clicked slot is 3:
+            execute player command "/viewprices armor 1"
+        else if clicked slot is 4:
+            execute player command "/viewprices nature 1"
+        else if clicked slot is 5:
+            execute player command "/viewprices fishing 1"
+        else if clicked slot is 6:
+            execute player command "/viewprices enchant 1"
+        else if clicked slot is 7:
+            execute player command "/viewprices brewing 1"
+        else if clicked slot is 8:
+            execute player command "/viewprices rare 1"
+
+    else if {_invName} contains "BASE PRICE LIST":
+        cancel event
+        if clicked inventory is player's inventory:
+            stop
+            
+        set {_cat} to metadata tag "view_base_cat" of player
+        set {_page} to (metadata tag "view_base_page" of player) parsed as integer
+        
+        if clicked slot is 45:
+            if {_page} > 1:
+                execute player command "/sellmultibefore %{_cat}% %{_page} - 1%"
+        else if clicked slot is 49:
+            execute player command "/sellmultibefore"
+        else if clicked slot is 53:
+            execute player command "/sellmultibefore %{_cat}% %{_page} + 1%"
+        else if clicked slot is between 0 and 44:
+            set {_item} to event-item
+            if {_item} is set:
+                if {_item} is not air:
+                    set {_typeStr} to "%type of {_item}%"
+                    replace all "minecraft:" with "" in {_typeStr}
+                    replace all " " with "_" in {_typeStr}
+                    if {_typeStr} contains "[":
+                        set {_s::*} to {_typeStr} split at "["
+                        set {_typeStr} to {_s::1}
+                        
+                    set {shop::admin_edit::%player's uuid%::item} to {_typeStr}
+                    close player's inventory
+                    send "{@prefix} &aPlease type the new price for &e%{_typeStr}% &ain chat (or type &ccancel &ato abort):"
+
+    else if {_invName} contains "PRICE LIST":
+        cancel event
+        if clicked inventory is player's inventory:
+            stop
+            
+        set {_cat} to metadata tag "view_cat" of player
+        set {_page} to (metadata tag "view_page" of player) parsed as integer
+        
+        if {_page} > 1:
+            if clicked slot is 45:
+                execute player command "/viewprices %{_cat}% %{_page} - 1%"
+        if clicked slot is 49:
+            execute player command "/sellmulti"
+        if clicked slot is 53:
+            execute player command "/viewprices %{_cat}% %{_page} + 1%"
+            
+    else if {_invName} contains "Item Selling System":
+        if clicked inventory is event-inventory:
+            if clicked slot is between 36 and 44:
+                cancel event
+                
+                if clicked slot is 42:
+                    set {_totalEarn} to 0
+                    delete {_earned_progress::*}
+                    
+                    loop 36 times:
+                        set {_slotIdx} to loop-number - 1
+                        set {_item} to slot {_slotIdx} of event-inventory
+                        
+                        if {_item} is set:
+                            if {_item} is not air:
+                                set {_typeStr} to "%type of {_item}%"
+                                replace all "minecraft:" with "" in {_typeStr}
+                                
+                                set {_cat} to {shop::item_category::%{_typeStr}%}
+                                if {_cat} is not set:
+                                    set {_cat} to "nature"
+                                    set {shop::baseprice::%{_typeStr}%} to 1
+                                    set {shop::market::price::%{_typeStr}%} to 1
+                                    set {shop::item_category::%{_str}%} to "nature"
+                                
+                                set {_amt} to item amount of {_item}
+                                set {_base} to {shop::baseprice::%{_typeStr}%}
+                                set {_market} to {shop::market::price::%{_typeStr}%}
+                                if {_market} is not set:
+                                    set {_market} to {_base}
+                                    
+                                set {_progress} to {shop::progress::%player's uuid%::%{_cat}%}
+                                if {_progress} is not set:
+                                    set {_progress} to 0
+                                    
+                                set {_catData::*} to getCategoryData({_progress}) split at "|"
+                                set {_mult} to {_catData::1} parsed as number
+                                
+                                set {_val} to ({_market} * {_mult}) * {_amt}
+                                add {_val} to {_totalEarn}
+                                add {_val} to {_earned_progress::%{_cat}%}
+                                
+                                set slot {_slotIdx} of event-inventory to air
+                                    
+                    if {_totalEarn} > 0:
+                        add {_totalEarn} to player's balance
+                        loop {_earned_progress::*}:
+                            add loop-value to {shop::progress::%player's uuid%::%loop-index%}
+                            
+                        send "{@prefix} &aItems sold successfully! Received a total of &e%formatMarketNum({_totalEarn})% ⛃"
+                        play sound "entity.player.levelup" with volume 0.5 to player
+                    else:
+                        send "{@prefix} &cNo buyable items found in the chest!"
+                        play sound "entity.villager.no" with volume 0.5 to player
+                        
+                else if clicked slot is 0:
+                    stop
+                else if clicked slot is 44:
+                    close player's inventory
+
+# ---------------------------------------------------------
+# Item return system when closing the /sell GUI without selling
+# ---------------------------------------------------------
+on inventory close:
+    set {_invName} to uncolored name of event-inventory
+    if {_invName} contains "Item Selling System":
+        loop 36 times:
+            set {_slotIdx} to loop-number - 1
+            set {_itemInSlot} to slot {_slotIdx} of event-inventory
+            if {_itemInSlot} is not air:
+                give {_itemInSlot} to player
+                set slot {_slotIdx} of event-inventory to air

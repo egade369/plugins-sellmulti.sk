@@ -1,0 +1,135 @@
+# ==========================================================
+# ✦ AUTO ITEM PRICE LORE & SMART STACK ORGANIZER (ROBUST) ✦
+# ==========================================================
+
+options:
+    prefix: &8[&e&lMarket&8] &7
+
+function applyPriceToItem(item: item) :: item:
+    if {_item} is air:
+        return {_item}
+        
+    set {_str} to "%type of {_item}%"
+    replace all "minecraft:" with "" in {_str}
+    replace all " " with "_" in {_str}
+    if {_str} contains "[":
+        set {_s::*} to {_str} split at "["
+        set {_str} to {_s::1}
+    if {_str} contains "{":
+        set {_s::*} to {_str} split at "{"
+        set {_str} to {_s::1}
+        
+    set {_price} to {shop::market::price::%{_str}%}
+    if {_price} is not set:
+        set {_price} to {shop::baseprice::%{_str}%}
+        if {_price} is not set:
+            set {_price} to 1
+            
+    set {_formattedPrice} to formatComma({_price})
+    set {_targetLoreLine} to "&6✦ &7Sell Price: &e&l%{_formattedPrice}% &6🪙 &8(ต่อชิ้น)"
+    
+    set {_lore::*} to lore of {_item}
+    delete {_cleanLore::*}
+    if {_lore::*} is set:
+        loop {_lore::*}:
+            set {_line} to loop-value
+            if {_line} does not contain "Sell Price":
+                if {_line} does not contain "ราคาตลาด":
+                    if {_line} does not contain "ราคาขาย":
+                        if {_line} does not contain "✦":
+                            if {_line} is not "":
+                                add {_line} to {_cleanLore::*}
+                                
+    delete {_finalLore::*}
+    if {_cleanLore::*} is set:
+        loop {_cleanLore::*}:
+            add loop-value to {_finalLore::*}
+            
+    add "" to {_finalLore::*}
+    add {_targetLoreLine} to {_finalLore::*}
+    
+    set lore of {_item} to {_finalLore::*}
+    return {_item}
+
+function organizeInventory(p: player):
+    loop integers from 0 to 35:
+        set {_i} to loop-value-1
+        set {_item1} to slot {_i} of {_p}'s inventory
+        if {_item1} is not air:
+            set {_max} to max stack size of type of {_item1}
+            if item amount of {_item1} < {_max}:
+                loop integers from 0 to 35:
+                    set {_j} to loop-value-2
+                    if {_i} is not {_j}:
+                        set {_item2} to slot {_j} of {_p}'s inventory
+                        if {_item2} is not air:
+                            if type of {_item1} is type of {_item2}:
+                                if lore of {_item1} is lore of {_item2}:
+                                    set {_space} to {_max} - item amount of {_item1}
+                                    if item amount of {_item2} <= {_space}:
+                                        add item amount of {_item2} to item amount of {_item1}
+                                        set slot {_i} of {_p}'s inventory to {_item1}
+                                        set slot {_j} of {_p}'s inventory to air
+                                        set {_item1} to slot {_i} of {_p}'s inventory
+                                    else:
+                                        remove {_space} from item amount of {_item2}
+                                        add {_space} to item amount of {_item1}
+                                        set slot {_i} of {_p}'s inventory to {_item1}
+                                        set slot {_j} of {_p}'s inventory to {_item2}
+
+on item spawn:
+    set {_item} to event-item
+    if {_item} is not air:
+        set item of event-entity to applyPriceToItem({_item})
+
+on inventory pickup:
+    wait 1 tick
+    loop integers from 0 to 35:
+        set {_index} to loop-value
+        set {_slotItem} to slot {_index} of player's inventory
+        if {_slotItem} is not air:
+            set slot {_index} of player's inventory to applyPriceToItem({_slotItem})
+
+on craft:
+    wait 1 tick
+    loop integers from 0 to 35:
+        set {_index} to loop-value
+        set {_slotItem} to slot {_index} of player's inventory
+        if {_slotItem} is not air:
+            set slot {_index} of player's inventory to applyPriceToItem({_slotItem})
+    organizeInventory(player)
+
+on inventory click:
+    if event-inventory is a furnace inventory:
+        if index of event-slot is 2:
+            set {_item} to event-slot
+            if {_item} is not air:
+                set event-slot to applyPriceToItem({_item})
+                wait 1 tick
+                organizeInventory(player)
+    else:
+        # เช็คและเติมราคาทันทีเมื่อผู้เล่นคลิกหยิบหรือจัดการไอเทมในช่องตัวเอง
+        wait 1 tick
+        loop integers from 0 to 35:
+            set {_index} to loop-value
+            set {_slotItem} to slot {_index} of player's inventory
+            if {_slotItem} is not air:
+                set {_hasPrice} to false
+                loop lore of {_slotItem}:
+                    if loop-value-2 contains "Sell Price":
+                        set {_hasPrice} to true
+                if {_hasPrice} is false:
+                    set slot {_index} of player's inventory to applyPriceToItem({_slotItem})
+
+on inventory open:
+    wait 1 tick
+    loop integers from 0 to 35:
+        set {_index} to loop-value
+        set {_slotItem} to slot {_index} of player's inventory
+        if {_slotItem} is not air:
+            set {_hasPrice} to false
+            loop lore of {_slotItem}:
+                if loop-value-2 contains "Sell Price":
+                    set {_hasPrice} to true
+            if {_hasPrice} is false:
+                set slot {_index} of player's inventory to applyPriceToItem({_slotItem})

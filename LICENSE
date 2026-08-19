@@ -1,0 +1,82 @@
+CUSTOM NON-COMMERCIAL SOFTWARE LICENSE
+
+Copyright (c) 2026 egade369. All rights reserved.
+
+================================================================================
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+================================================================================
+
+1. DEFINITIONS
+
+"Software" refers to the SellMulti source code, binaries, compiled JAR files, 
+scripts, documentation, and associated configuration files created by egade369.
+
+"Author" refers to the original creator and copyright holder, egade369.
+
+"User" refers to any individual or legal entity exercising permissions granted 
+by this License.
+
+--------------------------------------------------------------------------------
+2. GRANT OF PERMISSION (PERMITTED USE)
+
+Subject to the terms and restrictions of this License, the Author hereby grants 
+the User a non-exclusive, non-transferable, royalty-free license to:
+
+(a) Download, install, and run the Software on private, non-commercial, or 
+    public Minecraft servers.
+(b) View, study, and modify the source code solely for internal server 
+    customization, optimization, and bug fixing.
+(c) Share unmodified copies of the Software, provided that such distribution 
+    is strictly free of charge and retains all original copyright notices, 
+    author attribution, and this LICENSE file intact.
+
+--------------------------------------------------------------------------------
+3. STRICT COMMERCIAL PROHIBITIONS & RESALE RESTRICTIONS
+
+The following activities are STRICTLY PROHIBITED under all circumstances:
+
+(a) NO COMMERCIAL SALE OR RESALE:
+    You shall NOT sell, resell, rent, lease, sublicense, charge for access to, 
+    or otherwise commercially exploit the Software, its binaries, source code, 
+    or any derivative works based upon the Software.
+
+(b) NO PAID DISTRIBUTION OR BUNDLING:
+    You shall NOT include this Software as part of any paid product, paid plugin 
+    pack, setup service, commercial subscription, paid web store (e.g., Tebex, 
+    BuiltByBit, SpigotMC Premium, Polymart, Gumroad), or paid hosting tier.
+
+(c) NO REMOVAL OF ATTRIBUTION:
+    You shall NOT remove, alter, conceal, or obscure any copyright notices, 
+    author names, URLs, or licensing notices provided within the source code, 
+    compiled binaries, command credits, or documentation.
+
+(d) NO CLAIM OF AUTHORSHIP:
+    You shall NOT claim authorship, ownership, or intellectual property rights 
+    over the Software or any portion of its core architecture.
+
+--------------------------------------------------------------------------------
+4. DERIVATIVE WORKS & MODIFICATIONS
+
+If you create modifications, forks, or derivative works based on this Software:
+(a) The derivative work MUST remain subject to the exact terms of this License.
+(b) The derivative work CANNOT be sold, monetized, or redistributed for financial gain.
+(c) The derivative work MUST give clear, prominent attribution to egade369 as 
+    the original author.
+
+--------------------------------------------------------------------------------
+5. TERMINATION
+
+Any failure to comply with the terms of this License will result in immediate, 
+automatic termination of all rights granted herein. Upon termination, you must 
+immediately cease all use, distribution, and operation of the Software and 
+destroy all copies in your possession.
+
+--------------------------------------------------------------------------------
+6. DISCLAIMER OF WARRANTY & LIMITATION OF LIABILITY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+AUTHOR (EGADE369) BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, 
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, 
+OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -1,4 +1,4 @@
-<div align="center">
+
 
 [![Minecraft](https://img.shields.io/badge/MINECRAFT-26.2%20%7C%201.21.X-44CC11?style=for-the-badge)](https://www.minecraft.net/)
 [![Tested On](https://img.shields.io/badge/TESTED%20ON-PAPER%2026.2-007EC6?style=for-the-badge)](https://papermc.io/)
@@ -8,12 +8,24 @@
 
 </div>
 
-
 # SellMulti
 
 SellMulti is an advanced, high-performance economy plugin built for Minecraft 1.21+ servers running Paper or Purpur. It provides an end-to-end dynamic market economy, 9-category progression multipliers, drop-in auto-sell containers, a real-time Action Bar HUD, and an interactive Admin Price Editor GUI.
 
 ---
+
+##
+
+<img width="692" height="358" alt="image" src="https://github.com/user-attachments/assets/7a7356f4-ccae-41ab-bec9-f8a8af7729b0" />
+<img width="688" height="293" alt="image" src="https://github.com/user-attachments/assets/6cb79035-6efd-4c5b-8ccb-49d24fa727ee" />
+<img width="987" height="340" alt="image" src="https://github.com/user-attachments/assets/758e41c9-dfe9-423d-8de8-baef386e02b7" />
+<img width="696" height="496" alt="image" src="https://github.com/user-attachments/assets/b4fe1715-cc11-4533-9bac-3a8db51fa473" />
+<img width="699" height="309" alt="image" src="https://github.com/user-attachments/assets/10d6668c-c511-4b7c-8ce8-c619a5518a5f" />
+<img width="986" height="217" alt="image" src="https://github.com/user-attachments/assets/9cc9977b-a473-4b68-b5f4-89278b31c969" />
+<img width="802" height="501" alt="image" src="https://github.com/user-attachments/assets/2e5ecaa5-e130-4d97-a7fc-69a094b99676" />
+<img width="1254" height="284" alt="image" src="https://github.com/user-attachments/assets/c134d01e-3bac-46c5-867e-b97a7e0c83b2" />
+
+
 
 ## Dependencies & Requirements
 

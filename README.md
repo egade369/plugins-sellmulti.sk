@@ -1,3 +1,14 @@
+<div align="center">
+
+[![Minecraft](https://img.shields.io/badge/MINECRAFT-26.2%20%7C%201.21.X-44CC11?style=for-the-badge)](https://www.minecraft.net/)
+[![Tested On](https://img.shields.io/badge/TESTED%20ON-PAPER%2026.2-007EC6?style=for-the-badge)](https://papermc.io/)
+[![Java](https://img.shields.io/badge/JAVA-21%20%2F%2026%20%2B-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://www.oracle.com/java/)
+[![Economy](https://img.shields.io/badge/ECONOMY-VAULT%20API-EAB308?style=for-the-badge)](https://www.spigotmc.org/resources/vault.34315/)
+[![License](https://img.shields.io/badge/LICENSE-NON--COMMERCIAL-E05D44?style=for-the-badge)](LICENSE)
+
+</div>
+
+
 # SellMulti
 
 SellMulti is an advanced, high-performance economy plugin built for Minecraft 1.21+ servers running Paper or Purpur. It provides an end-to-end dynamic market economy, 9-category progression multipliers, drop-in auto-sell containers, a real-time Action Bar HUD, and an interactive Admin Price Editor GUI.
